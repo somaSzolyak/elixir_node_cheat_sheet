@@ -23,7 +23,7 @@ x  # 1
 *N.B.2*: the elixir `=` operator is used for assignment, but it is the match operator. Feeling like a CHAD? [Take a quick look at pattern matching](#pattern-matching) or [check the docs for a deep dive](https://hexdocs.pm/elixir/1.16/pattern-matching.html#the-match-operator).
 
 ### [Constants](#constants)
-Elixir has no equivalent to `const x = 1;` JavaScript declaration, however module attributes function as constants. Inside a module you declare a module attribute with `@attribute_name value` syntax. You can access them with the `@attribute_name`. For demo purposes we define a function to provide read access to the module attribute. [More on module attributes for Queens and Kings.](#module-attributes)
+Elixir has no equivalent to `const x = 1;` JavaScript declaration, however module attributes function as constants. Module attributes are fixed in compile time thus you cannot create them dynamically. Inside a module you declare a module attribute with `@attribute_name value` syntax. You can access them with `@attribute_name` within the module. For demo purposes we define a function to provide read access to the module attribute. [More on module attributes for Queens and Kings.](#module-attributes)
 **Elixir**
 ```elixir
 defmodule Car do
@@ -108,18 +108,98 @@ Sigils in general are a convenient and easy to read way to declare data types. T
 ~S|elixir \x26 #{"inter" <> "polation"}| # "elixir \\x26 #{"inter" <> "polation"}" ~S does not escape
 ```
 ### [Maps](#maps)
+#### [Declaration](#map-declaration-and-basic-access)
 **Elixir**
 ```elixir
-address = %{city: "London", country: "UK"}
-address[:city]  # "London"
-address.country  # "UK"
+address = %{"city" => "London", "country" => "UK"} # map with string keys
+address = %{city: "London", country: "UK"} # map with atom keys and shorthand syntax
+address = %{"city" => "London", country: "UK"} # map key-value declaration can be mixed, but the shorthand syntax must be on the end.
 ```
 **JavaScript**
 ```javascript
 let address = {city: "London", country: "UK"};
-address.city  // "London"
-address["country"]  // "UK"
 ```
+Elixir maps are similar to JavaScript maps, Objects, interfaces and classes. Elixir maps only hold key, value pairs, however **both** keys and values can be of any type. JavaScript maps can only hold string keys and values of any type. JavaScript objects can hold any type of key and value, however keys are coerced to strings. JavaScript interfaces and classes can hold any type of key and value, however keys are coerced to strings.
+
+**Elixir**
+```elixir
+iex> a = %{1 => "b"}
+%{1 => "b"}
+iex> c = %{a => 2}
+%{%{1 => "b"} => 2}
+```
+Above we create a map `a` with an integer key and a string value. Then we create a map `c` with a map `a` as a key and an integer value. Commonly map keys are [atoms](#atoms) or [strings](#strings).
+
+Map values can be any kind as well. We can create nested data structures this way.
+
+**Elixir**
+```elixir
+address = %{city: "London", country: "UK", neighbors: ["Jim", "Bob", "Alice"]}
+```
+#### [Reading values from a map](#reading-values-from-a-map)
+**Elixir**
+```elixir
+army = %{infantry: 100, cavalry: 50}
+army[:infantry]  # 100
+army.infantry  # 100
+```
+**JavaScript**
+```javascript
+let army = {infantry: 100, cavalry: 50};
+army.infantry  // 100
+```
+The [Map](https://hexdocs.pm/elixir/1.16/Map.html) module provides similar functionality compared to JavaScript maps and Objects. Some functions have 2 types like `Map.fetch/2` and `Map.fetch!/2`. The variant with the exclamatory mark `!` will raise an error if the function fails.
+
+**Elixir**
+```elixir
+army = %{infantry: 100, cavalry: 50}
+Map.get(army, :cavalry)  # 50
+Map.get(army, :airforce)  # nil
+Map.get(army, :airforce, 0)  # 0
+Map.fetch(army, :cavalry)  # {:ok, 50}
+Map.fetch(army, :airforce)  # :error
+Map.fetch!(army, :airforce)  # ** (KeyError) key not found: :airforce -> this error is raised
+```
+**JavaScript**
+```javascript
+let army = {infantry: 100, cavalry: 50};
+Object.get(army, "cavalry")  // 50
+```
+Another useful module is the [Kernel](https://hexdocs.pm/elixir/1.16/Kernel.html) module. It provides functions like `get_in/2` and `get_and_update_in/3` to access nested data structures.
+#### [Updating values in a map](#updating-values-in-a-map)
+**Elixir**
+```elixir
+tabletop_game = %{name: "Warhammer", players: 2}
+%{tabletop_game | name: "Warhammer 40k"}  # %{name: "Warhammer 40k", players: 2}
+```
+**JavaScript**
+```javascript
+let tabletopGame = {name: "Warhammer", players: 2};
+tabletopGame.name = "Warhammer 40k";  // {name: "Warhammer 40k", players: 2}
+```
+This elixir update syntax raises an error if no key was found
+
+**Elixir**
+```elixir
+%{tabletop_game | name: "Warhammer 40k", edition: "9th"}  # ** (KeyError) key :edition not found in: %{name: "Warhammer", players: 2}
+```
+The Map module has other tools to update a map like `Map.put/3`.
+
+**Elixir**
+```elixir
+Map.put(tabletop_game, :edition, "9th")  # %{name: "Warhammer 40k", players: 2, edition: "9th"}
+Map.put(tabletop_game, :name, "Magic the Gathering")  # %{name: "Magic the Gathering", players: 2, edition: "9th"}
+```
+**JavaScript**
+```javascript
+let tabletopGame = {name: "Warhammer", players: 2};
+tabletopGame.edition = "9th";  // {name: "Warhammer", players: 2, edition: "9th"}
+```
+#### [Deleting values from a map](#deleting-values-from-a-map)
+**Elixir**
+```elixir
+paper_kite = %{paper_thickness: 0.1, paper_color: "white", paper_size: "A4", fold: "stealth"}
+
 ### [Lists](#lists)
 **Elixir**
 ```elixir
@@ -170,30 +250,14 @@ tail  // [2, 3]
 ```
 *Nota bene*: Most common usage of tuples are return values. Similarly to lists there are several tool to manipulate them however, by far the most common usage is pattern matching tuples.
 ### [Functions](#functions)
-**Elixir**
-```elixir
-def greet(name) do # do/end syntax
-  "Hello, " <> name <> "!"
-end
-greet("world")  # "Hello, world!"
-
-def greet2(name), do: "Hello, " <> name <> "!"  # keyword syntax
-greet2("world")  # "Hello, world!"
-```
-**JavaScript**
-```javascript
-function greet(name) {
-  return "Hello, " + name + "!";
-}
-greet("world")  // "Hello, world!"
-```
+In Elixir everything is a function. The most basic function is the anonymous function.
 #### [Anonymous Functions](#anonymous-functions)
 **Elixir**
 ```elixir
 fn (name) -> "Hello, " <> name <> "!" end # arrow syntax
 fn name -> 
   "Hello, " <> name <> "!"
-end # do/end syntax
+end
 my_greet = fn (name) -> "Hello, " <> name <> "!" end # assign anonymous function to variable
 my_greet.("world")  # "Hello, world!"
 ```
@@ -202,18 +266,34 @@ my_greet.("world")  # "Hello, world!"
 let myGreet = (name => "Hello, " + name + "!")
 myGreet("world")  // "Hello, world!"
 ```
+#### [Module functions](#module-functions)
+**Elixir**
+```elixir
+defmodule Greeter do
+  def greet(name) do # do/end syntax
+    "Hello, " <> name <> "!"
+  end
+
+  def greet2(name), do: "Hello, " <> name <> "!"  # keyword syntax
+end
+Greeter.greet("world")  # "Hello, world!"
+Greeter.greet2("world")  # "Hello, world!"
+```
+**JavaScript**
+```javascript
+function greet(name) {
+  return "Hello, " + name + "!";
+}
+greet("world")  // "Hello, world!"
+```
+todo: private functions
+#### [Function Signature](#function-signature)
 #### [Function Overloading](#function-overloading)
-**Elixir**
-```elixir
-```
+todo: ! and ? functions
+#### [Default Arguments](#default-arguments)
+#### [Function guards](#function-guards)
 #### [Pipe Operator](#pipe-operator)
-**Elixir**
-```elixir
-```
 #### [Function Capture](#function-capture)
-**Elixir**
-```elixir
-```
 ### [Sigils](#sigils)
 **Elixir**
 ```elixir
@@ -351,7 +431,7 @@ defmodule Person do
 end
 ```
 ### [Module Attributes](#module-attributes)
-
+Compile time not dynamic
 **Elixir**
 ```elixir
 ```
